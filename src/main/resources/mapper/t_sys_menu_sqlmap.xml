@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shp.comb.modle.sys.SysMenu">
+
+    <resultMap id="resultBaseMap" type="com.shp.comb.modle.sys.SysMenu">
+        <id property="id" column="id" />
+        <result property="create_time" column="create_time" />
+        <result property="update_time" column="update_time" />
+        <result property="menu_name" column="menu_name" />
+        <result property="menu_code" column="menu_code" />
+        <result property="menu_icon" column="menu_icon" />
+        <result property="menu_type" column="menu_type" />
+        <result property="menu_url" column="menu_url" />
+        <result property="order_" column="order_" />
+        <result property="parent_id" column="parent_id" />
+        <result property="create_user" column="create_user" />
+    </resultMap>
+
+    <sql id="menuField">
+        id,menu_name,menu_code,menu_icon,menu_type,menu_url,order_,parent_id,parent_name,create_user
+    </sql>
+
+    <select id="selectMenuByAdmin" resultMap="resultBaseMap" parameterType="java.lang.Integer">
+        select t_sys_menu.*
+        from t_sys_menu,t_sys_admin,t_sys_role_menu
+        where  t_sys_admin.role_id = t_sys_role_menu.role_id and t_sys_menu.id = t_sys_role_menu.menu_id and t_sys_admin.id = #{u_id}
+    </select>
+
+    <select id="selectAllMenu" resultMap="resultBaseMap" >
+        select <include refid="menuField"/> from t_sys_menu
+    </select>
+
+    <insert id="insertMenu" parameterType="com.shp.comb.modle.sys.SysMenu">
+        insert into t_sys_menu(create_time,menu_name,menu_code,menu_icon,menu_type,menu_url,order_,parent_id,parent_name,create_user)
+        values (CURRENT_TIMESTAMP ,#{menu_name},#{menu_code},#{menu_icon},#{menu_type},#{menu_url},#{order_},#{parent_id},#{parent_name},#{create_user})
+    </insert>
+
+    <update id="updateMenu" parameterType="com.shp.comb.modle.sys.SysMenu">
+         update t_sys_menu
+         <set>
+             <if test="menu_name!=null">
+                 menu_name =#{menu_name},
+             </if>
+             <if test="menu_code!=null">
+                 menu_code =#{menu_code},
+             </if>
+             <if test="menu_icon!=null">
+                 menu_icon =#{menu_icon},
+             </if>
+             <if test="menu_type != null">
+                 menu_type =#{menu_type},
+             </if>
+             <if test="menu_url != null">
+                 menu_url = #{menu_url},
+             </if>
+             <if test="order_ != null">
+                 order_ = #{order_},
+             </if>
+             <if test="parent_id != null">
+                 parent_id = #{parent_id},
+             </if>
+             <if test="parent_name != null">
+                 parent_name = #{parent_name},
+             </if>
+             update_time =CURRENT_TIMESTAMP
+         </set>
+         where id = #{id}
+    </update>
+
+    <delete id="deleteMenuById" parameterType="java.lang.Integer">
+      delete from  t_sys_menu where id in (
+       select id from
+            (select id from t_sys_menu where id = #{id} or parent_id = #{id}  UNION  select id from t_sys_menu where parent_id in
+                (select id from t_sys_menu where id = #{id} or parent_id = #{id})
+            )
+       as deleteList)
+    </delete>
+
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.shp.comb.modle.sys.SysRole">
+
+    <resultMap id="resultBaseMap" type="com.shp.comb.modle.sys.SysRole">
+        <id property="id" column="id" />
+        <result property="create_time" column="create_time" />
+        <result property="update_time" column="update_time" />
+        <result property="role_name" column="role_name" />
+        <result property="role_desc" column="role_desc" />
+    </resultMap>
+
+    <sql id="userFiled">
+        id,role_name,role_desc
+    </sql>
+
+    <insert id="insert" parameterType="com.shp.comb.modle.sys.SysUser">
+        insert into t_sys_role(create_time,role_name,role_desc)
+        VALUES(CURRENT_TIMESTAMP,#{role_name},#{role_desc})
+    </insert>
+
+    <select id="selectList" resultMap="resultBaseMap">
+        select <include refid="userFiled"/>
+        FROM  t_sys_role
+    </select>
+
+    <update id="updateById" parameterType="com.shp.comb.modle.sys.SysUser">
+        update t_sys_role
+        <set>
+            <if test="role_name != null">
+                role_name = #{role_name},
+            </if>
+            <if test="role_desc != null">
+                role_desc = #{role_desc},
+            </if>
+                update_time = #{update_time}
+        </set>
+        where id = #{id}
+    </update>
+
+    <resultMap id="roleListMap" type="com.shp.comb.modle.vo.sys.SysRoleVo">
+        <id property="id" column="id" />
+        <result property="role_name" column="role_name" />
+        <result property="role_desc" column="role_desc" />
+        <collection property="roles" ofType="com.shp.comb.modle.sys.SysRoleMenu" javaType="list">
+            <result column="role_id" property="role_id"/>
+            <result column="menu_id" property="menu_id"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectRoleListWithMenu" resultMap="roleListMap">
+        select t_sys_role.id,t_sys_role.role_name,t_sys_role.role_desc,
+               t_sys_role_menu.role_id,t_sys_role_menu.menu_id
+        FROM  t_sys_role left join t_sys_role_menu on
+        t_sys_role_menu.role_id = t_sys_role.id
+        ORDER BY t_sys_role.id ASC
+    </select>
+
+
+
+</mapper>
