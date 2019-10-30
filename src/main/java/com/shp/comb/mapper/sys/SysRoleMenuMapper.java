@@ -15,4 +15,9 @@ public class SysRoleMenuMapper extends BaseMapper<SysRoleMenu,Integer> {
     public int deleteByRoleId(int role_id){
         return this.getSqlSession().delete(getFullSqlName("deleteByRoleId"),role_id);
     }
+
+    public int deleteByMenuId(int menu_id){
+        return this.getSqlSession().delete(getFullSqlName("deleteByMenuId"),menu_id);
+    }
 }
+

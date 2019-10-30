@@ -41,6 +41,10 @@
         where id = #{id}
     </update>
 
+    <delete id="deleteById" parameterType="java.lang.Integer">
+        delete FROM t_sys_role where id = #{id}
+    </delete>
+
     <resultMap id="roleListMap" type="com.shp.comb.modle.vo.sys.SysRoleVo">
         <id property="id" column="id" />
         <result property="role_name" column="role_name" />

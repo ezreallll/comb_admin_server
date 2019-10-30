@@ -44,7 +44,9 @@ public enum ErrorCodeEnum {
 
     /**************权限错误码*********************/
 
-    NO_MENU_PERMISSION(2002, "没有菜单权限");
+    NO_MENU_PERMISSION(2002, "没有菜单权限"),
+    NO_MENU_RESULT(2003,"菜单列表为空")
+    ;
 
 
 

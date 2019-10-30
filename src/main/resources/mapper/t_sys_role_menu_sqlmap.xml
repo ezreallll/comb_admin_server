@@ -28,6 +28,9 @@
         DELETE FROM t_sys_role_menu WHERE role_id = #{role_id}
    </delete>
 
+    <delete id="deleteByMenuId">
+        DELETE FROM t_sys_role_menu WHERE menu_id = #{menu_id}
+   </delete>
 
 
 </mapper>

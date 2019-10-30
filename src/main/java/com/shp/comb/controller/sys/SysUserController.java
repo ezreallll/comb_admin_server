@@ -5,6 +5,7 @@ import com.shp.comb.controller.BaseController;
 import com.shp.comb.controller.sys.vo.SysUserVo;
 import com.shp.comb.service.sys.SysUserService;
 import com.shp.comb.util.ResponseUtil;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,7 @@ public class SysUserController extends BaseController {
     @Autowired
     private SysUserService sysUserService;
 
+    @RequiresPermissions("sys:user:edit")
     @RequestMapping("/addOrUpdate")
     public void addUser(HttpServletResponse response,@RequestBody SysUserVo sysUserVo){
         try {
@@ -38,12 +40,13 @@ public class SysUserController extends BaseController {
         }
     }
 
-
+    @RequiresPermissions("sys:user")
     @RequestMapping("/list")
     public void getUserList(HttpServletResponse response,@RequestBody SysUserVo sysUserVo){
         ResponseUtil.renderSuccessJson(response,"ok",sysUserService.selectUserList(sysUserVo.getPage(),sysUserVo.getSize()));
     }
 
+    @RequiresPermissions("sys:user:delete")
     @RequestMapping("/del")
     public void deleteUser(HttpServletResponse response,@RequestBody SysUserVo sysUserVo){
         if(sysUserService.deleteUser(sysUserVo.getId())){

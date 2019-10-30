@@ -5,14 +5,17 @@ import com.shp.comb.common.ErrorCodeEnum;
 import com.shp.comb.common.enums.SysMenuTypeEnum;
 import com.shp.comb.config.shiro.ShiroUtil;
 import com.shp.comb.exception.ServerBizException;
+import com.shp.comb.mapper.sys.SysRoleMenuMapper;
 import com.shp.comb.modle.sys.SysMenu;
 import com.shp.comb.mapper.sys.SysMenuMapper;
+import com.shp.comb.modle.sys.SysRoleMenu;
 import com.shp.comb.modle.vo.sys.SysMenuVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -28,6 +31,9 @@ public class SysMenuService {
     @Autowired
     private SysMenuMapper sysMenuMapper;
 
+    @Autowired
+    private SysRoleMenuMapper sysRoleMenuMapper;
+
     /**
      * 获取用户菜单
      * @param id
@@ -36,7 +42,7 @@ public class SysMenuService {
     public HashMap getUserInfo(int id){
       HashMap result = new HashMap();
       List<SysMenu> sysMenus = sysMenuMapper.selectMenuByAdmin(id);
-      result.put("menuList",createMenuTree(sysMenuCopyToSysMenuVo(sysMenus),SysMenuTypeEnum.CATALOG.getCode()));
+      result.put("menuList",buildMenuTree(sysMenuCopyToSysMenuVo(sysMenus),0));
       List<String> perms=new ArrayList<>();
       for(SysMenu sysMenu:sysMenus){
           if(StringUtil.isNotEmpty(sysMenu.getMenu_code())){
@@ -55,19 +61,7 @@ public class SysMenuService {
     public List<SysMenuVo> getMenuList(){
         List<SysMenu> sysMenus = sysMenuMapper.selectAllMenu();
         List<SysMenuVo> sysMenuVos = sysMenuCopyToSysMenuVo(sysMenus);
-        //获取菜单层级
-        List<SysMenuVo> menuList = createMenuTree(sysMenuVos,SysMenuTypeEnum.MENU.getCode());
-        List<SysMenuVo> baseSysMenus = new ArrayList<>();
-        for(SysMenuVo sysMenuVo:sysMenuVos){
-            if(sysMenuVo.getType() == SysMenuTypeEnum.CATALOG.getCode()){
-                baseSysMenus.add(sysMenuVo);
-            }
-        }
-        //将目录的集合加进去
-        menuList.addAll(baseSysMenus);
-        //获取目录层级
-        List<SysMenuVo> result=createMenuTree(menuList,SysMenuTypeEnum.CATALOG.getCode());
-        return result;
+        return  buildMenuTree(sysMenuVos,0);
     }
 
     /**
@@ -107,8 +101,12 @@ public class SysMenuService {
      * 删除菜单
      * @return
      */
+    @Transactional(rollbackFor = Exception.class)
     public boolean deleteMenu(int id){
-        return sysMenuMapper.deleteMenuById(id)>0;
+        int count = 0;
+        sysRoleMenuMapper.deleteByMenuId(id);
+        count = sysMenuMapper.deleteMenuById(id);
+        return count >0;
     }
 
     private List<SysMenuVo> sysMenuCopyToSysMenuVo(List<SysMenu> sysMenus){
@@ -134,45 +132,32 @@ public class SysMenuService {
     }
 
 
-    /**
-     * 创建菜单树
-     * @param sysMenus
-     * @param menuType
-     * @return
-     */
-    private List<SysMenuVo> createMenuTree(List<SysMenuVo> sysMenus,int menuType){
-        List<SysMenuVo> menuTree = new ArrayList<>();
-        //添加父节点
-        for(SysMenuVo sysMenuVo:sysMenus){
-            if(sysMenuVo.getType() == menuType){
-                menuTree.add(sysMenuVo);
-            }
-        }
-        //添加菜单
-        for(SysMenuVo sysMenuVo:menuTree){ //循环父节点
-            List<SysMenuVo> childList=new ArrayList<>();
-            for(SysMenuVo sysMenuVo1:sysMenus) {
-                if (sysMenuVo1.getParentId() == sysMenuVo.getId()) {
-                    childList.add(sysMenuVo1);
+    public List<SysMenuVo> buildMenuTree(List<SysMenuVo> sysMenuVos,int parentId){
+        if(sysMenuVos!=null&&sysMenuVos.size()>0){
+            List<SysMenuVo> result=new ArrayList<>();
+            for(SysMenuVo sysMenuVo:sysMenuVos){
+                if(sysMenuVo.getParentId() == parentId){
+                    sysMenuVo.setChildren(buildMenuTree(sysMenuVos,sysMenuVo.getId()));
+                    Collections.sort(sysMenuVo.getChildren(), new Comparator<SysMenuVo>() {
+                        @Override
+                        public int compare(SysMenuVo s1, SysMenuVo s2) {
+                            // 根据order升序排列
+                            if (s1.getOrder_() > s2.getOrder_()) {
+                                return 1;
+                            }
+                            if (s1.getOrder_() == s2.getOrder_()) {
+                                return 0;
+                            }
+                            return -1;
+                        }
+                    });
+                    result.add(sysMenuVo);
                 }
             }
-            //子节点排序
-            Collections.sort(childList, new Comparator<SysMenuVo>() {
-                @Override
-                public int compare(SysMenuVo s1, SysMenuVo s2) {
-                    // 根据order升序排列
-                    if (s1.getOrder_() > s2.getOrder_()) {
-                        return 1;
-                    }
-                    if (s1.getOrder_() == s2.getOrder_()) {
-                        return 0;
-                    }
-                    return -1;
-                }
-            });
-            sysMenuVo.setChildren(childList);
+            return result;
+        }else {
+            throw new ServerBizException(ErrorCodeEnum.NO_MENU_RESULT);
         }
-        return menuTree;
     }
 
 
